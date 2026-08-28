@@ -1,0 +1,39 @@
+{
+  "name": "dk-qms-doc-review",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DK QMS · GMP 文档审核助手：导入 Word 报告，AI 结合 Linkly AI 知识库自动审阅，导出含原生 Word 批注的新文档。",
+  "scripts": {
+    "dev": "concurrently -k -n web,api -c blue,green \"npm:dev:web\" \"npm:dev:server\"",
+    "dev:web": "vite",
+    "dev:server": "node server/index.js",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "probe:mcp": "node scripts/mcp_probe.js"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.5.1",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "antd": "^5.21.6",
+    "cors": "^2.8.5",
+    "docx-preview": "^0.3.5",
+    "express": "^4.21.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.2.108",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "undici": "^8.8.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.16.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "concurrently": "^8.2.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}

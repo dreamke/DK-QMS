@@ -1,0 +1,33 @@
+# 依赖与构建产物
+node_modules
+dist
+
+# 本地配置（含 API Key，切勿提交）
+data/config.json
+
+# 本地日志
+*.log
+server.log
+
+# 项目内部记忆
+.workbuddy
+
+# 样例业务文档（含真实数据）
+样例文档
+
+# 内部调试手册（含本机路径，不随仓库发布）
+审核流程调试手册.md
+
+# 静态化前遗留、当前未被引用的服务端模块
+server/docx.js
+server/export.js
+server/pdf.js
+server/llm.js
+server/review.js
+server/desensitize.js
+
+# 调试脚本（依赖未随仓库发布的遗留服务端模块，保留在本地开发环境）
+scripts
+
+# 系统文件
+.DS_Store

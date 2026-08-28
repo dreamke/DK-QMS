@@ -1,0 +1,16 @@
+{
+  "model": {
+    "provider": "openai",
+    "baseURL": "<模型服务 BaseURL，OpenAI 兼容接口，例如 https://api.example.com/v1>",
+    "apiKey": "<你的 API Key>",
+    "modelName": "deepseek-v4-flash"
+  },
+  "mcp": {
+    "address": "http://127.0.0.1:60606/mcp",
+    "token": ""
+  },
+  "knowledge": { "gmp": true, "sop": true },
+  "retrieval": { "topK": 5 },
+  "slicing": { "enabled": false, "chunkSize": 4000 },
+  "severityThreshold": "all"
+}

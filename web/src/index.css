@@ -1,0 +1,24 @@
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+}
+
+/* docx-preview 渲染的页面样式：白纸 + 阴影，居中显示 */
+.docx-host .docx-wrapper {
+  background: transparent;
+  padding: 0;
+}
+
+.docx-host .docx-wrapper > section.docx {
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
+  margin-bottom: 20px;
+  border-radius: 2px;
+}
