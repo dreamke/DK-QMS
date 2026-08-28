@@ -325,8 +325,8 @@ export default function ResultPage({
                 <Select
                   allowClear
                   options={[
-                    { value: 'gmp', label: 'gmp' },
-                    { value: 'sop', label: 'sop' },
+                    { value: '标准库', label: '标准库' },
+                    { value: '文档库', label: '文档库' },
                     { value: '两者', label: '两者' },
                     { value: '经验', label: '经验' },
                   ]}

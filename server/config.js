@@ -8,8 +8,8 @@ const CONFIG_PATH = path.join(DATA_DIR, 'config.json');
 
 export const DEFAULT_CONFIG = {
   model: { provider: 'openai', baseURL: '', apiKey: '', modelName: '' },
-  mcp: { address: 'http://127.0.0.1:60606/mcp', token: '' },
-  knowledge: { gmp: true, sop: true },
+  mcp: { address: '', token: '' },
+  knowledge: {},
   retrieval: { topK: 5 },
   slicing: { enabled: false, chunkSize: 4000 },
   severityThreshold: 'all',

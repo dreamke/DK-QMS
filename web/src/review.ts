@@ -16,11 +16,8 @@ function numberedText(paragraphs: { index: number; text: string }[], maxChars: n
 }
 
 function enabledLibraries(config: any): string[] {
-  const libs: string[] = [];
   const k = config.knowledge || {};
-  if (k.gmp) libs.push('gmp');
-  if (k.sop) libs.push('sop');
-  return libs;
+  return Object.keys(k).filter((name) => k[name]);
 }
 
 // ---------- GMP 审核维度框架 ----------
@@ -159,7 +156,7 @@ async function generateAnnotations(
     '"clause": "引用的标准/文件依据(如 证据中的文件名或条款；无则填\'\')",' +
     '"summary": "问题说明(一句话)",' +
     '"suggestion": "具体修改建议",' +
-    '"source": "gmp|sop|两者|经验"' +
+    '"source": "标准库|文档库|两者|经验"' +
     '}]}\n' +
     '要求：anchorText 必须是对应段落原文的子串；若整篇无实质问题可返回 {"annotations":[]}。\n' +
     '注意：字段值中不要使用换行符或未经转义的双引号，所有内容保持在同一行内。';

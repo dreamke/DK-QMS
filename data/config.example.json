@@ -6,10 +6,10 @@
     "modelName": "deepseek-v4-flash"
   },
   "mcp": {
-    "address": "http://127.0.0.1:60606/mcp",
+    "address": "",
     "token": ""
   },
-  "knowledge": { "gmp": true, "sop": true },
+  "knowledge": {},
   "retrieval": { "topK": 5 },
   "slicing": { "enabled": false, "chunkSize": 4000 },
   "severityThreshold": "all"

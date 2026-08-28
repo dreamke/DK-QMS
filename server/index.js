@@ -140,7 +140,7 @@ app.post('/api/llm', async (req, res) => {
   }
 });
 
-// MCP 转发：浏览器发 {tool, args}，代理用 MCP SDK 调用本地 Linkly 并返回文本。
+// MCP 转发：浏览器发 {tool, args}，代理用 MCP SDK 调用本机知识库并返回文本。
 app.post('/api/mcp', async (req, res) => {
   try {
     const { tool, args } = req.body || {};

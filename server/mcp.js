@@ -1,11 +1,14 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
-const DEFAULT_ADDRESS = 'http://127.0.0.1:60606/mcp';
+const DEFAULT_ADDRESS = '';
 const clients = new Map();
 
 async function getClient(address) {
   const addr = address || DEFAULT_ADDRESS;
+  if (!addr) {
+    throw new Error('未配置知识库 MCP 地址，请在「设置 → 知识库」中填写');
+  }
   const cached = clients.get(addr);
   if (cached) return cached;
 
@@ -40,7 +43,7 @@ export async function listLibraries(address) {
 /**
  * 在指定知识库中检索。
  * @param {string} query 检索词/自然语言
- * @param {string} [library] 库名（如 'gmp' / 'sop'），省略则全库
+ * @param {string} [library] 库名（由知识库 list_libraries 返回），省略则全库
  * @param {number} [limit] 返回条数
  * @param {string} [address] MCP 地址
  * @returns {Promise<{query:string, results:Array, total:number}>}

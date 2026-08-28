@@ -16,8 +16,8 @@ import { getConfig, saveConfig, getLibraries, type AppConfig } from '../api/clie
 
 const DEFAULT: AppConfig = {
   model: { provider: 'openai', baseURL: '', apiKey: '', modelName: '' },
-  mcp: { address: 'http://127.0.0.1:60606/mcp', token: '' },
-  knowledge: { gmp: true, sop: true },
+  mcp: { address: '', token: '' },
+  knowledge: {},
   retrieval: { topK: 5 },
   slicing: { enabled: false, chunkSize: 4000 },
   severityThreshold: 'all',
@@ -104,7 +104,7 @@ export default function SettingsPage() {
             name={['model', 'baseURL']}
             rules={[{ required: true, message: '必填' }]}
           >
-            <Input placeholder="https://api.linkly.ai/v1" />
+            <Input placeholder="https://api.example.com/v1" />
           </Form.Item>
           <Form.Item label="API Key" name={['model', 'apiKey']}>
             <Input.Password placeholder="留空表示不修改" />
@@ -114,11 +114,11 @@ export default function SettingsPage() {
             name={['model', 'modelName']}
             rules={[{ required: true, message: '必填' }]}
           >
-            <Input placeholder="如 gpt-4o / Linkly 模型 ID" />
+            <Input placeholder="如 gpt-4o / 你的模型 ID" />
           </Form.Item>
         </Card>
 
-        <Card title="知识库（Linkly AI MCP）" size="small" style={{ marginBottom: 16 }}>
+        <Card title="知识库（本机 MCP）" size="small" style={{ marginBottom: 16 }}>
           <Form.Item
             label="MCP 地址"
             name={['mcp', 'address']}
@@ -131,20 +131,20 @@ export default function SettingsPage() {
           </Form.Item>
           <Form.Item
             label="知识库范围"
-            tooltip="对应 MCP 实际库：gmp（GMP 标准/法规）、sop（技术文档/标准操作规程）"
+            tooltip="对应知识库实际库（由 list_libraries 返回，可在「列举知识库」中查看）"
           >
             <Space size={16}>
               <Space size={6}>
                 <Form.Item name={['knowledge', 'gmp']} valuePropName="checked" noStyle>
                   <Switch />
                 </Form.Item>
-                <span>gmp（GMP 标准）</span>
+                <span>标准库（GMP 类）</span>
               </Space>
               <Space size={6}>
                 <Form.Item name={['knowledge', 'sop']} valuePropName="checked" noStyle>
                   <Switch />
                 </Form.Item>
-                <span>sop（技术文档/SOP）</span>
+                <span>文档库（SOP 类）</span>
               </Space>
             </Space>
           </Form.Item>
