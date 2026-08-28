@@ -133,6 +133,7 @@ async function generateAnnotations(
   chunkStart: number,
   chunkEnd: number,
   docType: string,
+  sourceEnum: string,
 ) {
   const slice = paragraphs.slice(chunkStart, chunkEnd);
   const docText = slice.map((p) => `[${p.index}] ${p.text}`).join('\n');
@@ -156,7 +157,7 @@ async function generateAnnotations(
     '"clause": "引用的标准/文件依据(如 证据中的文件名或条款；无则填\'\')",' +
     '"summary": "问题说明(一句话)",' +
     '"suggestion": "具体修改建议",' +
-    '"source": "标准库|文档库|两者|经验"' +
+    `"source": "${sourceEnum}"` +
     '}]}\n' +
     '要求：anchorText 必须是对应段落原文的子串；若整篇无实质问题可返回 {"annotations":[]}。\n' +
     '注意：字段值中不要使用换行符或未经转义的双引号，所有内容保持在同一行内。';
@@ -180,7 +181,8 @@ export async function runReview({ paragraphs, config, emit }: RunReviewParams): 
   const model = config.model || {};
   if (!model.baseURL) throw new Error('未配置模型 Base URL，请先在「设置 → 模型 API」中完成配置');
   if (!model.modelName) throw new Error('未配置模型名称，请先在「设置 → 模型 API」中完成配置');
-  if (!enabledLibraries(config).length) throw new Error('未启用任何知识库，请在「设置 → 知识库范围」中至少启用一个');
+  const enabledLibs = enabledLibraries(config);
+  if (!enabledLibs.length) throw new Error('未启用任何知识库，请在「设置 → 知识库范围」中至少启用一个');
 
   const doMask = !config.desensitize || config.desensitize.enabled !== false;
   const modelParagraphs = doMask ? desensitizeParagraphs(paragraphs) : paragraphs;
@@ -216,6 +218,7 @@ export async function runReview({ paragraphs, config, emit }: RunReviewParams): 
     chunks.push([0, paragraphs.length]);
   }
 
+  const sourceEnum = [...enabledLibs, '两者', '经验'].join('|');
   let annotations: any[] = [];
   for (let ci = 0; ci < chunks.length; ci += 1) {
     const [s, e] = chunks[ci];
@@ -226,7 +229,7 @@ export async function runReview({ paragraphs, config, emit }: RunReviewParams): 
         percent: Math.round(((ci + 1) / chunks.length) * 100),
       });
     }
-    const part = await generateAnnotations(model, modelParagraphs, questions, evidence, emit, s, e, docType);
+    const part = await generateAnnotations(model, modelParagraphs, questions, evidence, emit, s, e, docType, sourceEnum);
     annotations = annotations.concat(part);
   }
 

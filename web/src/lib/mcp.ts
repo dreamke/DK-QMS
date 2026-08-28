@@ -1,4 +1,4 @@
-// 浏览器端 MCP 客户端：经 /api/mcp 代理调用本机知识库（CORS 由代理补）。
+// 浏览器端 MCP 客户端：经 /api/mcp 代理调用 Linkly AI 知识库（CORS 由代理补）。
 async function callTool(tool: string, args: Record<string, any> = {}): Promise<string> {
   const r = await fetch('/api/mcp', {
     method: 'POST',

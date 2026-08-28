@@ -161,7 +161,7 @@ export default function ImportPage({
         </Typography.Title>
         <Typography.Paragraph type="secondary">
           拖入一份 Word / PDF 报告（偏差调查报告 / 风险评估报告 / SOP 等），系统会在浏览器内渲染预览，
-          随后结合知识库进行 AI 审核，生成结构化批注。
+          随后结合 Linkly AI 知识库进行 AI 审核，生成结构化批注。
         </Typography.Paragraph>
         <Card>
           <Upload.Dragger accept=".docx,.pdf" maxCount={1} showUploadList={false} beforeUpload={handleFile}>

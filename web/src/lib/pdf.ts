@@ -23,7 +23,7 @@ const SEV_RGB: Record<string, any> = {
 function utf16beHex(s: string): string {
   let h = 'FEFF';
   for (const ch of String(s)) {
-    const cp = ch.codePointAt(0);
+    const cp = ch.codePointAt(0) ?? 0;
     h += cp.toString(16).padStart(4, '0').toUpperCase();
   }
   return h;

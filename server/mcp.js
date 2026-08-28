@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
+// Linkly AI 知识库 MCP 转发客户端：经服务端代理调用本机知识库，地址运行时由 config 提供。
 const DEFAULT_ADDRESS = '';
 const clients = new Map();
 

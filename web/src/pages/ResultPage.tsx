@@ -110,6 +110,15 @@ export default function ResultPage({
     return annotations.filter((a) => a.severity === sevFilter);
   }, [annotations, sevFilter]);
 
+  // 来源选项随实际批注动态生成（知识库由 list_libraries 发现，名称不固定）
+  const sourceOptions = useMemo(() => {
+    const set = new Set<string>();
+    annotations.forEach((a) => {
+      if (a.source) set.add(a.source);
+    });
+    return [...set, '两者', '经验'].map((s) => ({ value: s, label: s }));
+  }, [annotations]);
+
   function commit(next: Annotation[]) {
     const renumbered = next.map((a, i) => ({ ...a, id: i + 1 }));
     onResultChange({
@@ -321,17 +330,9 @@ export default function ResultPage({
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="source" label="来源">
-                <Select
-                  allowClear
-                  options={[
-                    { value: '标准库', label: '标准库' },
-                    { value: '文档库', label: '文档库' },
-                    { value: '两者', label: '两者' },
-                    { value: '经验', label: '经验' },
-                  ]}
-                />
-              </Form.Item>
+                <Form.Item name="source" label="来源">
+                  <Select allowClear options={sourceOptions} />
+                </Form.Item>
             </Col>
           </Row>
           <Form.Item

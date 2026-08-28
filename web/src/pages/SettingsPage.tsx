@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Card,
   Form,
@@ -13,6 +13,46 @@ import {
   Spin,
 } from 'antd';
 import { getConfig, saveConfig, getLibraries, type AppConfig } from '../api/client';
+
+interface LibEntry {
+  id: string;
+  label: string;
+}
+
+// 解析 Linkly AI 知识库 list_libraries 的返回，兼容 JSON 数组/对象与纯文本列表。
+function parseLibraries(text: string): LibEntry[] {
+  if (!text || !text.trim()) return [];
+  try {
+    const j = JSON.parse(text);
+    if (Array.isArray(j)) {
+      return j
+        .map((x: any) => {
+          if (typeof x === 'string') return { id: x, label: x };
+          const id = x?.id ?? x?.name ?? x?.key ?? x?.slug;
+          const label = x?.name ?? x?.label ?? x?.description ?? id;
+          return id ? { id: String(id), label: String(label ?? id) } : null;
+        })
+        .filter(Boolean) as LibEntry[];
+    }
+    if (j && typeof j === 'object') {
+      return Object.entries(j).map(([k, v]: any) => ({
+        id: k,
+        label: v?.name ?? v?.label ?? v?.description ?? k,
+      }));
+    }
+  } catch {
+    /* 非 JSON，走文本解析 */
+  }
+  const out: LibEntry[] = [];
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const cleaned = line.replace(/^[-*•\d.]\s*/, '');
+    const m = cleaned.match(/^([A-Za-z0-9_./-]+)\s*[:：]?\s*(.*)$/);
+    if (m && m[1]) out.push({ id: m[1], label: (m[2] || m[1]).trim() || m[1] });
+  }
+  return out;
+}
 
 const DEFAULT: AppConfig = {
   model: { provider: 'openai', baseURL: '', apiKey: '', modelName: '' },
@@ -30,10 +70,25 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [libLoading, setLibLoading] = useState(false);
   const [libText, setLibText] = useState('');
+  const [libs, setLibs] = useState<LibEntry[]>([]);
+  const initialKnowledgeRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
-    getConfig()
-      .then((cfg) => {
+    (async () => {
+      try {
+        const cfg = await getConfig();
+        let libEntries: LibEntry[] = [];
+        try {
+          const r = await getLibraries();
+          if (r.ok) {
+            libEntries = parseLibraries(r.text || '');
+            setLibText(r.text || '(空)');
+          }
+        } catch {
+          /* 知识库未配置或离线，留空，用户可稍后点「列举知识库」 */
+        }
+        initialKnowledgeRef.current = cfg.knowledge || {};
+        setLibs(libEntries);
         form.setFieldsValue({
           model: { ...DEFAULT.model, ...cfg.model },
           mcp: { ...DEFAULT.mcp, ...cfg.mcp },
@@ -44,19 +99,23 @@ export default function SettingsPage() {
           desensitize: { ...DEFAULT.desensitize, ...cfg.desensitize },
         });
         setLoading(false);
-      })
-      .catch(() => {
+      } catch {
         form.setFieldsValue(DEFAULT);
         setLoading(false);
-      });
+      }
+    })();
   }, [form]);
 
   const loadLibs = async () => {
     setLibLoading(true);
     try {
       const r = await getLibraries();
-      if (r.ok) setLibText(r.text || '(空)');
-      else message.error(`知识库列举失败：${r.error}`);
+      if (r.ok) {
+        setLibText(r.text || '(空)');
+        setLibs(parseLibraries(r.text || ''));
+      } else {
+        message.error(`知识库列举失败：${r.error}`);
+      }
     } finally {
       setLibLoading(false);
     }
@@ -70,7 +129,7 @@ export default function SettingsPage() {
         apiKey: v.model.apiKey === '******' ? undefined : v.model.apiKey,
       },
       mcp: v.mcp,
-      knowledge: v.knowledge,
+      knowledge: { ...initialKnowledgeRef.current, ...(v.knowledge || {}) },
       retrieval: v.retrieval,
       slicing: v.slicing,
       severityThreshold: v.severityThreshold,
@@ -118,35 +177,37 @@ export default function SettingsPage() {
           </Form.Item>
         </Card>
 
-        <Card title="知识库（本机 MCP）" size="small" style={{ marginBottom: 16 }}>
+        <Card title="知识库（Linkly AI MCP）" size="small" style={{ marginBottom: 16 }}>
           <Form.Item
             label="MCP 地址"
             name={['mcp', 'address']}
             rules={[{ required: true, message: '必填' }]}
           >
-            <Input />
+            <Input placeholder="本机 Linkly AI 知识库提供的 MCP 端点地址" />
           </Form.Item>
           <Form.Item label="MCP Token（可选）" name={['mcp', 'token']}>
             <Input.Password />
           </Form.Item>
           <Form.Item
             label="知识库范围"
-            tooltip="对应知识库实际库（由 list_libraries 返回，可在「列举知识库」中查看）"
+            tooltip="由 Linkly AI 知识库 list_libraries 动态发现。勾选需要参与审核的库；未勾选的库不会被检索。"
           >
-            <Space size={16}>
-              <Space size={6}>
-                <Form.Item name={['knowledge', 'gmp']} valuePropName="checked" noStyle>
-                  <Switch />
-                </Form.Item>
-                <span>标准库（GMP 类）</span>
+            {libs.length ? (
+              <Space size={[16, 8]} wrap>
+                {libs.map((lib) => (
+                  <Space key={lib.id} size={6}>
+                    <Form.Item name={['knowledge', lib.id]} valuePropName="checked" noStyle>
+                      <Switch />
+                    </Form.Item>
+                    <span>{lib.label}</span>
+                  </Space>
+                ))}
               </Space>
-              <Space size={6}>
-                <Form.Item name={['knowledge', 'sop']} valuePropName="checked" noStyle>
-                  <Switch />
-                </Form.Item>
-                <span>文档库（SOP 类）</span>
-              </Space>
-            </Space>
+            ) : (
+              <Typography.Text type="secondary">
+                尚未读取到知识库列表，请点击右侧「列举知识库」后重试。
+              </Typography.Text>
+            )}
           </Form.Item>
           <Button onClick={loadLibs} loading={libLoading}>
             列举知识库（list_libraries）

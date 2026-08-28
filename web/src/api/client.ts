@@ -6,7 +6,7 @@ export interface AppConfig {
     modelName: string;
   };
   mcp: { address: string; token: string };
-  knowledge: { gmp: boolean; sop: boolean };
+  knowledge: { [key: string]: boolean };
   retrieval: { topK: number };
   slicing: { enabled: boolean; chunkSize: number };
   severityThreshold: 'all' | 'medium' | 'high';
@@ -95,7 +95,7 @@ export interface ReviewHandlers {
 }
 
 function downloadBytes(filename: string, bytes: Uint8Array, mime: string): void {
-  const blob = new Blob([bytes], { type: mime });
+  const blob = new Blob([bytes as unknown as BlobPart], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

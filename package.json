@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "DK QMS · GMP 文档审核助手：导入 Word 报告，AI 结合本机知识库自动审阅，导出含原生批注的新文档。",
+  "description": "DK QMS · GMP 文档审核助手：导入 Word 报告，AI 结合 Linkly AI 知识库自动审阅，导出含原生批注的新文档。",
   "scripts": {
     "dev": "concurrently -k -n web,api -c blue,green \"npm:dev:web\" \"npm:dev:server\"",
     "dev:web": "vite",
