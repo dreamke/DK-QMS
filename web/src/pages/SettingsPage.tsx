@@ -43,13 +43,38 @@ function parseLibraries(text: string): LibEntry[] {
   } catch {
     /* 非 JSON，走文本解析 */
   }
+  // 文本解析：只取真正的条目，忽略标题、分隔线与元信息行。
+  const isHeading = (s: string) => /^#{1,6}\s/.test(s);
+  const isDivider = (s: string) => /^([-*_=])\1{2,}$/.test(s);
+  const isMeta = (s: string) => /^\[.*\]$/.test(s) || /^(meta|note)/i.test(s);
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+
   const out: LibEntry[] = [];
-  for (const raw of text.split('\n')) {
-    const line = raw.trim();
-    if (!line || line.startsWith('#')) continue;
-    const cleaned = line.replace(/^[-*•\d.]\s*/, '');
-    const m = cleaned.match(/^([A-Za-z0-9_./-]+)\s*[:：]?\s*(.*)$/);
-    if (m && m[1]) out.push({ id: m[1], label: (m[2] || m[1]).trim() || m[1] });
+  const seen = new Set<string>();
+  const push = (id: string, label: string) => {
+    if (!id || seen.has(id)) return;
+    seen.add(id);
+    out.push({ id, label: label || id });
+  };
+
+  // 优先级 1：列表项（"- name ..." / "* name" / "• name"）
+  for (const line of lines) {
+    if (isHeading(line) || isDivider(line) || isMeta(line)) continue;
+    if (!/^[-*•]\s+/.test(line)) continue;
+    const item = line.replace(/^[-*•]\s+/, '').trim();
+    const m = item.match(/^([A-Za-z0-9_][A-Za-z0-9_.\-/]*)\s*(.*)$/);
+    if (m && m[1]) push(m[1], (m[2] || '').trim());
+  }
+  if (out.length) return out;
+
+  // 优先级 2：回退为 "name: description" 形式的普通行
+  for (const line of lines) {
+    if (isHeading(line) || isDivider(line) || isMeta(line)) continue;
+    const m = line.match(/^([A-Za-z0-9_][A-Za-z0-9_.\-/]*)\s*[:：]?\s*(.*)$/);
+    if (m && m[1]) push(m[1], (m[2] || '').trim());
   }
   return out;
 }
@@ -199,7 +224,7 @@ export default function SettingsPage() {
                     <Form.Item name={['knowledge', lib.id]} valuePropName="checked" noStyle>
                       <Switch />
                     </Form.Item>
-                    <span>{lib.label}</span>
+                    <span>{lib.label && lib.label !== lib.id ? `${lib.id} ${lib.label}` : lib.id}</span>
                   </Space>
                 ))}
               </Space>
