@@ -1,6 +1,7 @@
 import { chatJSON } from './lib/llm';
 import { search } from './lib/mcp';
 import { desensitizeParagraphs } from './lib/desensitize';
+import { getHistory, appendHistory } from './api/client';
 import type { Annotation, ReviewQuestion, ReviewStats } from './api/client';
 
 const SEV_ORDER: Record<string, number> = { 高: 3, 中: 2, 低: 1 };
@@ -31,7 +32,7 @@ const GMP_AUDIT_FRAMEWORK = `GMP 文档审核应覆盖以下维度（按文档�
 
 type Emit = (event: string, data: any) => void;
 
-async function extractQuestions(model: any, paragraphs: any[], emit: Emit) {
+async function extractQuestions(model: any, paragraphs: any[], emit: Emit, historyText?: string) {
   const docText = numberedText(paragraphs, 16000);
   const system =
     '你是一位资深的 GMP（药品生产质量管理规范）文档审核专家，精通偏差调查、CAPA、ICH Q9 风险评估、数据完整性(ALCOA+)、SOP 文件管理等法规与标准。\n' +
@@ -40,6 +41,9 @@ async function extractQuestions(model: any, paragraphs: any[], emit: Emit) {
   const user =
     '下面先给出 GMP 文档审核框架（你应据此选取相关维度）：\n' +
     GMP_AUDIT_FRAMEWORK +
+    (historyText
+      ? '\n\n参考历史审批经验（可从中提炼本次审核应新增的审核要求，仅参考与本文档类型相关的部分，不要照搬无关内容）：\n' + historyText
+      : '') +
     '\n\n待审核文档（每段前的 [n] 为段落编号）：\n\n' +
     docText +
     '\n\n请先判断文档类型（偏差报告 / 风险评估 / SOP / 其他），然后依据框架，挑选本文档最相关的 4-8 个维度。' +
@@ -134,6 +138,7 @@ async function generateAnnotations(
   chunkEnd: number,
   docType: string,
   sourceEnum: string,
+  historyText?: string,
 ) {
   const slice = paragraphs.slice(chunkStart, chunkEnd);
   const docText = slice.map((p) => `[${p.index}] ${p.text}`).join('\n');
@@ -147,6 +152,7 @@ async function generateAnnotations(
     '除非原文确实出现方括号、尖括号或明显的占位符变量名（{name}、<<姓名>> 等），否则不要凭空指出文档中存在"[姓名]"之类的占位符问题；' +
     '若职责条款确有不足，请从"未量化（无具体频率/阈值/可衡量标准）""未指明上下级汇报关系""未覆盖所有相关情形""未定义输入输出"等客观维度切入。';
   const user =
+    (historyText ? '参考历史审批经验（仅参考与本文档相关的审核要点，从中补充可新增的审批要求）：\n' + historyText + '\n\n' : '') +
     '待审核文档（[n] 为段落编号，仅可对这些编号出现的段落生成批注）：\n' +
     docText +
     '\n\n审核关键问题与知识库证据：\n' +
@@ -174,18 +180,61 @@ function passesThreshold(sev: string, threshold: string | undefined): boolean {
   return true;
 }
 
+// 把本次审核内容格式化为 Markdown，追加到「历史审批内容汇总.md」。
+function buildHistoryMarkdown(
+  docType: string,
+  questions: ReviewQuestion[],
+  annotations: Annotation[],
+  docName?: string,
+): string {
+  const now = new Date().toLocaleString('zh-CN', { hour12: false });
+  const lines: string[] = [];
+  lines.push(`## 审核记录 · ${now}${docName ? ` · ${docName}` : ''}`);
+  lines.push(`- 文档类型：${docType || '未识别'}`);
+  if (questions.length) {
+    lines.push(`- 审核问题（${questions.length}）：`);
+    questions.forEach((q, i) => lines.push(`  ${i + 1}. [${q.dimension || q.aspect || ''}] ${q.question}`));
+  }
+  if (annotations.length) {
+    lines.push(`- 批注（${annotations.length}）：`);
+    annotations.forEach((a) => {
+      const tail = a.suggestion ? ` 建议：${a.suggestion}` : '';
+      lines.push(`  - [${a.severity}] ${a.category || ''}（段落 #${a.anchorPara}）${a.summary}${tail}`);
+    });
+  } else {
+    lines.push('- 批注：无');
+  }
+  return lines.join('\n');
+}
+
 export interface RunReviewParams {
   paragraphs: { index: number; text: string }[];
   config: any;
   emit: Emit;
+  docName?: string;
 }
 
-export async function runReview({ paragraphs, config, emit }: RunReviewParams): Promise<Annotation[]> {
+export async function runReview({ paragraphs, config, emit, docName }: RunReviewParams): Promise<Annotation[]> {
   const model = config.model || {};
   if (!model.baseURL) throw new Error('未配置模型 Base URL，请先在「设置 → 模型 API」中完成配置');
   if (!model.modelName) throw new Error('未配置模型名称，请先在「设置 → 模型 API」中完成配置');
   const enabledLibs = enabledLibraries(config);
   if (!enabledLibs.length) throw new Error('未启用任何知识库，请在「设置 → 知识库范围」中至少启用一个');
+
+  // 预读取历史审批经验（本地 data/history/历史审批内容汇总.md），作为本次审核参考
+  let historyText = '';
+  try {
+    const h = await getHistory();
+    if (h.ok && h.content) {
+      historyText = h.content.trim().slice(0, 6000);
+      emit('progress', {
+        stage: 'extract',
+        message: `已预读取「历史审批内容汇总」${historyText.length} 字，作为本次审核的经验参考`,
+      });
+    }
+  } catch {
+    /* 历史读取失败不影响主流程 */
+  }
 
   const doMask = !config.desensitize || config.desensitize.enabled !== false;
   const modelParagraphs = doMask ? desensitizeParagraphs(paragraphs) : paragraphs;
@@ -196,7 +245,7 @@ export async function runReview({ paragraphs, config, emit }: RunReviewParams): 
     });
   }
 
-  const { questions, docType } = await extractQuestions(model, modelParagraphs, emit);
+  const { questions, docType } = await extractQuestions(model, modelParagraphs, emit, historyText);
   if (!questions.length) throw new Error('未能提炼出审核问题，请检查文档内容或模型配置');
 
   const evidence = await retrieveEvidence(questions, config, emit);
@@ -232,7 +281,7 @@ export async function runReview({ paragraphs, config, emit }: RunReviewParams): 
         percent: Math.round(((ci + 1) / chunks.length) * 100),
       });
     }
-    const part = await generateAnnotations(model, modelParagraphs, questions, evidence, emit, s, e, docType, sourceEnum);
+    const part = await generateAnnotations(model, modelParagraphs, questions, evidence, emit, s, e, docType, sourceEnum, historyText);
     annotations = annotations.concat(part);
   }
 
@@ -268,6 +317,19 @@ export async function runReview({ paragraphs, config, emit }: RunReviewParams): 
   annotations.forEach((a, i) => (a.id = i + 1));
 
   emit('annotations', { annotations });
+
+  // 审核完成后，把本次审核内容追加到「历史审批内容汇总.md」
+  try {
+    const md = buildHistoryMarkdown(docType, questions, annotations, docName);
+    await appendHistory(md);
+    emit('progress', {
+      stage: 'annotate',
+      message: '已把本次审核内容追加到「历史审批内容汇总.md」',
+    });
+  } catch {
+    /* 历史写入失败不影响结果 */
+  }
+
   emit('done', {
     annotations,
     questions,

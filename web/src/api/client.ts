@@ -36,6 +36,21 @@ export async function getLibraries(): Promise<{ ok: boolean; text?: string; erro
   return r.json();
 }
 
+// ---------- 审核历史（本地 data/history/历史审批内容汇总.md） ----------
+export async function getHistory(): Promise<{ ok: boolean; content?: string; error?: string }> {
+  const r = await fetch(`${BASE}/history`);
+  return r.json();
+}
+
+export async function appendHistory(content: string): Promise<{ ok: boolean; error?: string }> {
+  const r = await fetch(`${BASE}/history`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+  return r.json();
+}
+
 // ---------- 审核相关类型 ----------
 export type Severity = '高' | '中' | '低';
 

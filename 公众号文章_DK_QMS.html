@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DK QMS · GMP 文档审核助手：AI 结合 Linkly AI 知识库，让偏差报告与 SOP 审核不再翻断手</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f2f3f5; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif; }
+  .post { max-width: 640px; margin: 0 auto; background: #ffffff; padding: 28px 24px 40px; }
+  .post h1 { font-size: 22px; line-height: 1.5; color: #111; font-weight: 700; margin-bottom: 10px; }
+  .meta { font-size: 13px; color: #999; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid #f0f0f0; }
+  .post p { font-size: 16px; line-height: 1.85; color: #3a3a3a; margin-bottom: 18px; text-align: justify; }
+  .post p.lead { font-size: 17px; color: #222; }
+  .post h2 { font-size: 19px; line-height: 1.5; color: #1a4f8b; font-weight: 700; margin: 32px 0 14px; padding-left: 12px; border-left: 4px solid #3B82F6; }
+  .post h3 { font-size: 16px; color: #333; font-weight: 700; margin: 22px 0 10px; }
+  .post em { font-style: normal; color: #3B82F6; font-weight: 600; }
+  .post strong { color: #111; }
+
+  /* 配图卡片 */
+  .fig { background: #f7f9fc; border: 1px solid #e8edf4; border-radius: 12px; padding: 18px 16px; margin: 18px 0; }
+  .fig .cap { font-size: 13px; color: #888; text-align: center; margin-top: 10px; line-height: 1.5; }
+  .fig svg { display: block; width: 100%; height: auto; }
+
+  /* 功能卡片 */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0; }
+  .ft { background: #fff; border: 1px solid #e6ebf2; border-radius: 10px; padding: 14px; }
+  .ft .t { font-size: 15px; font-weight: 700; color: #1a4f8b; margin-bottom: 6px; }
+  .ft .d { font-size: 13.5px; line-height: 1.65; color: #666; }
+  @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+
+  /* 知识库数据条 */
+  .kb { display: flex; gap: 10px; margin: 16px 0; }
+  .kb .k { flex: 1; background: linear-gradient(135deg, #eef4ff, #f7faff); border: 1px solid #dbe7fb; border-radius: 10px; padding: 14px; text-align: center; }
+  .kb .k .n { font-size: 22px; font-weight: 800; color: #3B82F6; }
+  .kb .k .l { font-size: 13px; color: #555; margin-top: 4px; }
+
+  /* 流程步骤 */
+  .steps { counter-reset: st; margin: 18px 0; }
+  .step { position: relative; background: #fff; border: 1px solid #e6ebf2; border-radius: 10px; padding: 14px 14px 14px 52px; margin-bottom: 10px; }
+  .step::before { counter-increment: st; content: counter(st); position: absolute; left: 14px; top: 14px; width: 26px; height: 26px; border-radius: 50%; background: #3B82F6; color: #fff; font-weight: 700; font-size: 14px; line-height: 26px; text-align: center; }
+  .step .t { font-size: 15px; font-weight: 700; color: #1a4f8b; }
+  .step .d { font-size: 13.5px; line-height: 1.65; color: #666; margin-top: 4px; }
+
+  /* 样例审核模拟 UI */
+  .ui { border: 1px solid #dfe5ee; border-radius: 12px; overflow: hidden; margin: 18px 0; box-shadow: 0 4px 14px rgba(30,60,120,.08); }
+  .ui .bar { background: #f3f6fb; padding: 10px 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e6ebf2; }
+  .ui .bar .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .ui .bar .ttl { font-size: 13.5px; color: #333; font-weight: 600; }
+  .ui .body { display: flex; min-height: 260px; }
+  .ui .doc { flex: 1.2; background: #fff; padding: 16px; border-right: 1px solid #edf0f5; }
+  .ui .doc .paper { background: #fff; border: 1px solid #e8edf4; border-radius: 6px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+  .ui .doc .paper .p { font-size: 12.5px; line-height: 1.7; color: #555; margin-bottom: 8px; }
+  .ui .doc .paper .hl { background: #fff3cd; border-radius: 3px; padding: 1px 2px; }
+  .ui .side { flex: 1; background: #fafcff; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .ui .note { background: #fff; border-left: 4px solid #D93F30; border-radius: 6px; padding: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .ui .note.g { border-left-color: #E08600; }
+  .ui .note .s { font-size: 11px; color: #D93F30; font-weight: 700; margin-bottom: 3px; }
+  .ui .note.g .s { color: #E08600; }
+  .ui .note .c { font-size: 12px; color: #333; line-height: 1.55; }
+
+  /* 代码块 / 命令 */
+  .code { background: #0f172a; color: #dbe4ff; border-radius: 10px; padding: 16px; font-family: "SF Mono", Consolas, "Courier New", monospace; font-size: 13px; line-height: 1.8; overflow-x: auto; margin: 14px 0; }
+  .code .cm { color: #7d8db1; }
+
+  /* 链接卡片 */
+  .link { background: #f7f9fc; border: 1px solid #e6ebf2; border-radius: 10px; padding: 14px 16px; margin: 12px 0; display: flex; align-items: center; gap: 12px; }
+  .link .ic { width: 40px; height: 40px; border-radius: 10px; background: #3B82F6; color: #fff; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .link .l { font-size: 14.5px; color: #3B82F6; font-weight: 600; word-break: break-all; }
+  .link .s { font-size: 12.5px; color: #888; margin-top: 2px; }
+
+  .tip { background: #fff8ec; border: 1px solid #f7e6c3; border-radius: 10px; padding: 12px 14px; font-size: 13.5px; line-height: 1.7; color: #7a5b22; margin: 16px 0; }
+  .footer { margin-top: 30px; padding-top: 18px; border-top: 1px solid #f0f0f0; font-size: 13px; color: #999; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="post">
+
+  <h1>用 AI 审 GMP 文档是什么体验？我做了个本地小工具，还接上了自己的知识库</h1>
+  <div class="meta">DK QMS · GMP 文档审核助手 · 2026-08-29</div>
+
+  <p class="lead">先讲个真实的场景。QA 要审一份偏差调查报告，手边摆着 GMP 附录、公司几百份 SOP、还有一堆历史案例。要在规定时限内把「根因分析是不是挖到底了」「CAPA 能不能落地验证」「数据完整性有没有踩 ALCOA+ 的红线」逐条核对完，还得在 Word 里留下可追溯的审阅意见。</p>
+  <p>这个活儿，干过的人都懂。翻标准翻到手酸是小事，最怕的是脑子里的条款跟文档里的表述对不上，批注写了一堆，回头自己也说不清依据在哪。</p>
+  <p>所以我把这个场景做成了一件趁手的本地小工具，名字叫 <strong>DK QMS</strong>。核心思路很简单，文档解析、AI 审核、批注导出全部在浏览器里完成，AI 审的时候不是凭记忆瞎说，而是真的去检索一个挂在本机的知识库来取证。今天把它的功能架构、用法和一段真实样例都摊开讲。</p>
+
+  <h2>它到底能干什么</h2>
+  <p>DK QMS 是一个 GMP 文档审核助手，导入一份 Word 或 PDF 报告，AI 会结合知识库自动审阅，最后导出一份带原生批注的新文档。支持的文档类型很宽，偏差调查报告、风险评估报告、SOP 标准操作规程都可以，只审内容，不动版式。</p>
+  <p>所有重活都在浏览器里跑，数据不出本机，密钥也永远留在服务端，这在制药场景里是刚需。</p>
+
+  <div class="grid">
+    <div class="ft"><div class="t">Word / PDF 双格式</div><div class="d">导入偏差报告、风险评估、SOP 等任意 Word 文档，PDF 也原生支持。</div></div>
+    <div class="ft"><div class="t">三阶段 AI 审核</div><div class="d">脱敏 → 提炼关键问题 → 检索知识库取证 → 生成结构化批注。</div></div>
+    <div class="ft"><div class="t">原生批注导出</div><div class="d">Word 导出原生 OOXML 批注，PDF 导出保留版式的高亮批注。</div></div>
+    <div class="ft"><div class="t">批注可编辑</div><div class="d">审核结果在浏览器里就能增删改，改完再导出。</div></div>
+    <div class="ft"><div class="t">发送前脱敏</div><div class="d">姓名、工号、批号、设备编号等敏感信息自动打码后再送模型。</div></div>
+    <div class="ft"><div class="t">密钥不出本机</div><div class="d">API Key 只存在服务端配置文件，浏览器拿到的永远是掩码。</div></div>
+  </div>
+
+  <h2>功能架构：纯静态 SPA + 极简代理</h2>
+  <p>架构上我刻意做了减法。前端是一个纯静态 SPA，文档解析、三阶段审校编排、批注导出全部在浏览器内完成。服务端只有一个极简 Node 代理，职责就两条，转发 LLM 调用、转发知识库检索，顺便托管静态页面。</p>
+  <p>为什么这么设计？因为实测下来，模型 API 是支持浏览器跨域直连的，但本机知识库的 MCP 接口不带 CORS 头，浏览器直接被拦。所以知识库这一路必须走代理，LLM 也就一起走了，好处是密钥可以稳稳地留在服务端，浏览器永不接触明文。</p>
+
+  <div class="tip"><strong>关于模型的本地化，这里多说几句：</strong>这套工具从架构上就是「本地优先」的。文中出现的 DeepSeek 仅仅是我们做样例测试时临时接的外部模型，用来演示效果，不代表生产部署建议。如果要在企业里正式部署，强烈建议接入部署在本机的开源模型（例如通过 Ollama 或 LM Studio 运行的本地大模型）。一旦换成本地模型，模型、知识库、文档全程都在企业内网，文本不出本机、不出内网，从根源上杜绝数据丢失或泄露的可能性。以这个场景的审核任务量来看，本地模型的效果完全够用，而且越用越顺手。</div>
+
+  <div class="fig">
+    <svg viewBox="0 0 600 330" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8"/></marker>
+      </defs>
+      <rect x="10" y="10" width="580" height="80" rx="12" fill="#eef4ff" stroke="#bcd3f7"/>
+      <text x="30" y="40" font-size="14" font-weight="700" fill="#1a4f8b">浏览器（纯静态 SPA）</text>
+      <text x="30" y="62" font-size="12" fill="#5b6b82">文档解析 · 三阶段审校编排 · 批注导出 · 结果编辑</text>
+      <text x="30" y="80" font-size="12" fill="#5b6b82">API Key 永不进入浏览器（只看到 ******）</text>
+
+      <line x1="150" y1="90" x2="150" y2="140" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+      <line x1="450" y1="90" x2="450" y2="140" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+      <text x="60" y="120" font-size="11" fill="#94a3b8">POST /api/llm</text>
+      <text x="385" y="120" font-size="11" fill="#94a3b8">POST /api/mcp</text>
+
+      <rect x="10" y="140" width="580" height="70" rx="12" fill="#f1f5f9" stroke="#d7dee9"/>
+      <text x="30" y="170" font-size="14" font-weight="700" fill="#334155">极简 Node 代理（Express，持有密钥）</text>
+      <text x="30" y="193" font-size="12" fill="#64748b">注入 API Key 转发 SSE · 转发知识库检索 · 托管静态页面</text>
+
+      <line x1="150" y1="210" x2="150" y2="255" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+      <line x1="450" y1="210" x2="450" y2="255" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+
+      <rect x="15" y="258" width="270" height="58" rx="12" fill="#f0fdf4" stroke="#c7ead2"/>
+      <text x="35" y="283" font-size="13" font-weight="700" fill="#166534">LLM 服务（OpenAI 兼容接口）</text>
+      <text x="35" y="303" font-size="12" fill="#3f6212">示例：DeepSeek · 企业本地：Ollama / LM Studio</text>
+
+      <rect x="315" y="258" width="275" height="58" rx="12" fill="#eef4ff" stroke="#bcd3f7"/>
+      <text x="335" y="283" font-size="13" font-weight="700" fill="#1a4f8b">Linkly AI 知识库（本机 MCP）</text>
+      <text x="335" y="303" font-size="12" fill="#475569">gmp 标准库 · sop 文档库</text>
+    </svg>
+    <div class="cap">图 1 · DK QMS 功能架构：浏览器 SPA + 极简转发代理 + Linkly AI 本机知识库</div>
+  </div>
+
+  <h2>灵魂：Linkly AI 知识库</h2>
+  <p>这个项目最核心的部分，就是它挂了一个 <strong>Linkly AI</strong> 本机知识库。Linkly AI 把制药相关的验证文档、GMP 标准、本地案例全部索引进了知识库，通过 MCP 接口暴露检索能力。DK QMS 审文档的时候，不是让 AI 凭训练记忆瞎编条款，而是真的去知识库里检索对应标准，把条款和原文片段作为批注的依据。</p>
+  <p>说人话就是，AI 批注里写的每条「依据」，背后都有一条真实可查的检索结果，而不是模型自己脑补的。这对制药行业这种「批注要有出处」的场景，价值是决定性的。</p>
+
+  <div class="kb">
+    <div class="k"><div class="n">3,591</div><div class="l">sop 文档库（SOP / 技术文档）</div></div>
+    <div class="k"><div class="n">1,345</div><div class="l">gmp 标准库（GMP / 法规标准）</div></div>
+  </div>
+  <p style="font-size:13.5px;color:#888;">当前 Linkly AI 知识库的索引规模（list_libraries 实时返回）。</p>
+
+  <p>知识库的范围不是写死的，应用启动时会自动调用 <em>list_libraries</em> 动态发现可用的库，并按库渲染启用开关，勾选哪个库，审核时就检索哪个库。换一套知识库内容，界面跟着变，不用改代码。</p>
+
+  <h2>三阶段审核流程</h2>
+  <p>点一下「开始 AI 审核」，前端会按下面这套流程自动跑完，每一步都有进度反馈。</p>
+
+  <div class="steps">
+    <div class="step"><div class="t">发送前脱敏</div><div class="d">姓名、工号、手机、邮箱、身份证、批号、设备编号等敏感信息自动打码，原始文档和导出文件不受影响。</div></div>
+    <div class="step"><div class="t">提炼关键问题</div><div class="d">先判断文档类型（偏差 / 风险评估 / SOP / 其他），再按 GMP 六维框架生成 4–8 个针对性问题，每题绑定一个可检索的知识库 query。</div></div>
+    <div class="step"><div class="t">检索知识库证据</div><div class="d">逐题调用 Linkly AI 知识库 search，把命中的条款、文件名、相关度、原文片段整理成证据块。</div></div>
+    <div class="step"><div class="t">生成结构化批注</div><div class="d">综合原文、关键问题与知识库证据，输出锚定原文片段的批注，含严重度、问题类别、引用条款、修改建议、来源。</div></div>
+  </div>
+
+  <div class="fig">
+    <svg viewBox="0 0 600 92" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8"/></marker></defs>
+      <g font-size="12.5" font-weight="600" fill="#1a4f8b" text-anchor="middle">
+        <rect x="10" y="28" width="100" height="36" rx="9" fill="#eef4ff" stroke="#bcd3f7"/><text x="60" y="50">① 脱敏</text>
+        <rect x="135" y="28" width="100" height="36" rx="9" fill="#eef4ff" stroke="#bcd3f7"/><text x="185" y="50">② 提炼问题</text>
+        <rect x="260" y="28" width="110" height="36" rx="9" fill="#eef4ff" stroke="#bcd3f7"/><text x="315" y="50">③ 检索取证</text>
+        <rect x="395" y="28" width="100" height="36" rx="9" fill="#eef4ff" stroke="#bcd3f7"/><text x="445" y="50">④ 生成批注</text>
+        <rect x="520" y="28" width="70" height="36" rx="9" fill="#dff0ff" stroke="#9cc6f5"/><text x="555" y="50">导出</text>
+      </g>
+      <line x1="110" y1="46" x2="133" y2="46" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr2)"/>
+      <line x1="235" y1="46" x2="258" y2="46" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr2)"/>
+      <line x1="370" y1="46" x2="393" y2="46" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr2)"/>
+      <line x1="495" y1="46" x2="518" y2="46" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr2)"/>
+    </svg>
+    <div class="cap">图 2 · 三阶段审核流程（脱敏 → 问题 → 取证 → 批注 → 导出）</div>
+  </div>
+
+  <p>审核维度方面，内置了一套 GMP 审核框架常量，覆盖六类维度：<strong>偏差管理</strong>、<strong>CAPA</strong>、<strong>风险评估（ICH Q9）</strong>、<strong>数据完整性（ALCOA+）</strong>、<strong>文件管理 / SOP</strong>、<strong>合规与可追溯</strong>。想调整「审核看哪些方面」，改这一处常量即可，第一、三阶段自动适配。</p>
+
+  <h2>越用越聪明的经验教训库</h2>
+  <p>这套工具还有一个很实用的特性，审核的内容是可以不断积累的。企业自己的历史偏差报告、已批准的风险评估、审核通过的 SOP，都可以持续加进知识库。今天审的每一份文档、每一条被验证有效的批注，都是明天审核的依据。</p>
+  <p>你可以把它想象成一个经验教训库，随着积累越来越厚，AI 的审核依据越来越广，能覆盖的条款越来越全，提出的问题也会越来越精准。用一段时间之后你会明显感觉到，它不再是泛泛的通用问答，而是一个真正长在公司体系里、只属于自己团队的审核助手。</p>
+
+  <h2>双格式原生批注导出</h2>
+  <p>审核结果不是简单的一段评语，而是可以写回原文档的原生批注。</p>
+  <div class="grid">
+    <div class="ft"><div class="t">Word 原生批注</div><div class="d">导出为 OOXML 评论，在 Word / WPS 审阅窗格里可以逐条查看、接受、拒绝，完全符合现有的审核流转习惯。</div></div>
+    <div class="ft"><div class="t">PDF 高亮批注</div><div class="d">在原始版式上叠加半透明高亮矩形，并写入原生 Highlight 注释，图片、表格、排版全部保留，阅读器审阅窗格可看。</div></div>
+  </div>
+
+  <h2>隐私与安全设计</h2>
+  <p>制药行业的文档敏感度高，这块我做了多重防线。一是文档全程本地处理，不上传任何云端；二是 API Key 只存在服务端配置文件，浏览器拿到的永远是掩码；三是发送给模型和知识库的文本先做脱敏，姓名、工号、批号、设备编号这些自动打码；四是如果接入的是本机部署的模型，从原文档、中间过程到导出文件，全程都不出企业内网，连出网请求都不会有。</p>
+  <p>脱敏这层值得单独说一句，它相当于在「本机处理」和「模型调用」之间再加一道隔离，是双保险。即使文档留在本机，发送出去给模型和知识库的文本也会先被打码，敏感信息只以脱敏形态出现，从机制上进一步压缩隐私泄露的可能。原始文件始终保持完整，只有模型和知识库看到的文本是脱敏后的。</p>
+  <p>说个开发时踩过的真实坑，AI 曾把「设备操作员」「生产主管」这类职位名误判成 [姓名] 占位符，追查了半天才发现是脱敏规则把职位词后的汉字当姓名打码了，修掉之后这类误判就彻底消失了。这种细节，正是这套工具和通用 AI 问答之间的差距所在。</p>
+
+  <h2>样例实战：无菌注射剂车间机器操作 SOP</h2>
+  <p>光说不练不行，我拿一份《无菌注射剂生产车间机器操作 SOP》实测了一遍。这是一份结构很标准的 GMP 设备操作 SOP，包含目的、范围、职责、操作程序、记录规范、培训要求等要素。</p>
+  <p style="font-size:13.5px;color:#888;">说明一下，这份《无菌注射剂生产车间机器操作 SOP》是从网上下载的公开资料整理而成的示例，并非任何企业的真实 SOP，仅用于功能演示。</p>
+  <p>导入后点开始审核，AI 会先按 GMP 框架提炼针对性问题，再逐题检索 Linkly 知识库取证，最后生成锚定原文的批注。下面这张图模拟了应用审核结果页的样子，左侧是带高亮的文档预览，右侧是按严重度排序的批注列表。</p>
+
+  <div class="ui">
+    <div class="bar">
+      <span class="dot" style="background:#ff5f57"></span>
+      <span class="dot" style="background:#febc2e"></span>
+      <span class="dot" style="background:#28c840"></span>
+      <span class="ttl">无菌注射剂生产车间机器操作SOP · 审核结果</span>
+    </div>
+    <div class="body">
+      <div class="doc">
+        <div class="paper">
+          <div class="p" style="font-weight:700;color:#333">无菌注射剂生产车间机器操作 GMP 合规标准操作规程（节选）</div>
+          <div class="p">4.1.2 检查线清场记录，确认 QA 已完成并签字放行，确保上一批次的产品残留、文件与标签全部清除。</div>
+          <div class="p">4.2.1 使用无菌工具与无菌手套按已验证程序装配设备部件。<span class="hl">4.2.2 采用 SOP 规定的、经验证（IQ/OQ/PQ）确认的设备参数进行设置。</span></div>
+          <div class="p">4.4.1 运行中持续观察：异常振动或噪音、剔除品或装量偏差、密封缺陷。</div>
+          <div class="p">4.7.1 所有日志用不褪色墨水填写，不留空白。<span class="hl">4.7.2 更正错误时画单线划改、签名并注明日期。</span></div>
+        </div>
+      </div>
+      <div class="side">
+        <div class="note"><div class="s">高 · 数据完整性</div><div class="c">4.7.2 未明确电子记录场景的更正规范，建议补充电子数据修改须留审计追踪的要求（ALCOA+）。</div></div>
+        <div class="note g"><div class="s">中 · 设备确认</div><div class="c">4.2.2 建议补充参数变更时的再验证触发条件，明确偏离已验证参数范围的处理路径。</div></div>
+        <div class="note g"><div class="s">中 · 偏差处理</div><div class="c">4.4.1 建议将异常观察项与偏差报告分级标准联动，避免漏报影响批次评估。</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="cap" style="text-align:center;font-size:13px;color:#888;margin-bottom:18px;">图 3 · 审核结果模拟（左：文档高亮预览；右：按严重度排序的批注）</div>
+
+  <p>每一张批注卡都包含原文锚点、严重度（高 / 中 / 低）、问题类别、问题说明、修改建议和引用依据。审核完可以在浏览器里直接增删改，满意了再导出，导出文件里就是货真价实的 Word 批注，可以走正常审批流程。</p>
+
+  <h2>使用方法</h2>
+  <p>工具是本地单机部署，没有登录、没有云依赖，一条命令一条配置就能跑起来。前提是你本机装好了 Node.js 20+，并且启动了 Linkly AI 知识库服务。</p>
+
+  <div class="code">
+    <span class="cm"># 1. 获取代码并安装依赖</span><br>
+    git clone https://github.com/dreamke/DK-QMS.git<br>
+    cd DK-QMS<br>
+    npm install<br><br>
+    <span class="cm"># 2. 准备配置（填入模型 API Key 与知识库地址）</span><br>
+    cp data/config.example.json data/config.json<br>
+    <span class="cm"># 编辑 data/config.json，填入模型 BaseURL / API Key / 模型名</span><br><br>
+    <span class="cm"># 3. 构建前端并启动</span><br>
+    npm run build<br>
+    npm start<br>
+    <span class="cm"># 浏览器打开 http://localhost:8787</span>
+  </div>
+
+  <p>也可以直接用开发模式，一条 <strong>npm run dev</strong> 同时起前端热更新和代理服务，前端在 5173 端口，代理在 8787 端口。首次进入先到「设置」页填好模型 API 和知识库地址，点「列举知识库」验证连通，然后就可以开始导文档审核了。</p>
+
+  <div class="tip">配置模型时提醒一句，如果是在企业内网部署，建议把模型的 Base URL 指向本地模型服务（例如 Ollama 或 LM Studio），而不是外网 API。示例里的 DeepSeek 只是演示用的外部模型，正式使用本地模型更稳、更安全。</div>
+
+  <h2>相关地址</h2>
+
+  <div class="link">
+    <div class="ic">▶</div>
+    <div>
+      <div class="l">https://github.com/dreamke/DK-QMS</div>
+      <div class="s">GitHub 开源仓库：源码、README、配置模板</div>
+    </div>
+  </div>
+  <div class="link">
+    <div class="ic" style="background:#10b981">◎</div>
+    <div>
+      <div class="l">http://localhost:8787</div>
+      <div class="s">本地运行地址（npm start 之后访问）</div>
+    </div>
+  </div>
+
+  <div class="tip">小提示：仓库里只包含配置模板，不含任何 API Key 和真实地址，克隆后需要自己填写。文档全程在本机处理，密钥只存在服务端配置文件里。</div>
+
+  <p>做这个工具的过程里我最大的感受是，AI 在制药这种高合规行业里，价值不在「替代人」，而在「把人的时间从翻标准里解放出来」。文档还是人审的，但 AI 先把证据链给你摆齐了，你只需要做判断。</p>
+  <p>如果你也在和 GMP 文档较劲，非常推荐在本地把它跑起来试试，效果会比你想象的好。文档、密钥、审核过程全部留在自己手里，配合本地模型就是彻底的内网闭环。也欢迎来仓库里提意见，反正，多一个趁手的工具总不是坏事。</p>
+
+  <div class="footer">
+    以上，既然看到这里了，如果觉得不错，随手点个赞、在看、转发三连吧。<br>
+    谢谢你看我的文章，我们，下次再见。
+  </div>
+</div>
+</body>
+</html>

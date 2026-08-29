@@ -63,6 +63,39 @@ app.get('/api/libraries', async (req, res) => {
   }
 });
 
+// ---------- 审核历史（本地 data/history/历史审批内容汇总.md） ----------
+// 每次 AI 审核完成后由前端追加本次记录；下次审核前预读取，作为历史审批经验注入 prompt。
+const HISTORY_DIR = path.resolve(__dirname, '../data/history');
+const HISTORY_FILE = path.join(HISTORY_DIR, '历史审批内容汇总.md');
+
+app.get('/api/history', (req, res) => {
+  try {
+    const content = fs.existsSync(HISTORY_FILE) ? fs.readFileSync(HISTORY_FILE, 'utf-8') : '';
+    res.json({ ok: true, content });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/api/history', (req, res) => {
+  try {
+    const text = (req.body && req.body.content) || '';
+    if (!text || !text.trim()) {
+      res.json({ ok: true, written: false });
+      return;
+    }
+    fs.mkdirSync(HISTORY_DIR, { recursive: true });
+    const isNew = !fs.existsSync(HISTORY_FILE);
+    const header = isNew
+      ? '# 历史审批内容汇总\n\n> 由 DK QMS 自动维护：每次 AI 审核完成后自动追加审核记录。\n> 你可以在此文件顶部手动补充「审批要求」，下次审核新文档时会预读取本文件作为经验参考。\n\n'
+      : '\n\n---\n\n';
+    fs.appendFileSync(HISTORY_FILE, header + text.trim() + '\n', 'utf-8');
+    res.json({ ok: true, written: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // LLM 转发：浏览器只发 {model, messages, temperature, maxTokens, json}，
 // 代理补上 baseURL + Authorization，并把上游 SSE 原样回传（浏览器自带解析器）。
 app.post('/api/llm', async (req, res) => {

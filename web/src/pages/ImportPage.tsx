@@ -140,6 +140,7 @@ export default function ImportPage({
         paragraphs: parsed.paragraphs,
         config: cfg,
         emit,
+        docName: doc.name,
       });
     } catch (e) {
       setErrorMsg((e as Error).message);
