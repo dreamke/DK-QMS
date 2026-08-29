@@ -34,3 +34,6 @@ scripts
 
 # 系统文件
 .DS_Store
+
+# 本地测试用的仓库克隆副本（独立 git 仓库，避免被误当作嵌套仓库提交）
+github test/
